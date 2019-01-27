@@ -137,3 +137,5 @@ None
 
 [[1]. **CONTRIBUTING.md** of Tensorflow](https://github.com/tensorflow/tensorflow/blob/master/CONTRIBUTING.md)
 
+[[2]. What is the difference between origin and upstream in github](https://outofmymemory.wordpress.com/2013/09/18/what-is-the-difference-between-origin-and-upstream-in-github/)
+
