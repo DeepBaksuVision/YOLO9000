@@ -44,7 +44,7 @@ so, contributor should be follow procedure like below
 
    ​      issue number : #15 
 
-   ​      branch name : #15 
+   ​      branch name : issue_15 
 
 5. Build your code in local machine and your repository at branch named issue number
 
