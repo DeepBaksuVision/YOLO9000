@@ -25,11 +25,16 @@ class VocDetection(data.Dataset):
         self.annotation_paths = self._get_filepaths(self.annotation_folder)
         self.annotation_paths.sort(key=lambda filepath : int(filepath.split("/")[-1].split(".")[0]))
 
-        self.classes = self._get_classes_list(self.annotation_paths)
+        classes_ordered_by_alphabet = self._get_classes_list_from_dataset(self.annotation_paths)
+        self.classes = classes_ordered_by_alphabet
 
         self._validate_image_Extension(self.image_paths)
         assert(self.__is_length_same(image_paths = self.image_paths,
                                      annotation_paths = self.annotation_paths))
+
+        a = self.__parse_xml_of_voc(self.annotation_paths[0])
+        b = self.__convert_box_label_to_yolo_label(a, self.classes)
+
 
     def __getitem__(self, index):
         """
@@ -43,15 +48,9 @@ class VocDetection(data.Dataset):
 
         pass
 
-    def _get_classes_list(self, annotation_paths):
+    def _get_classes_list_from_dataset(self, annotation_paths):
         import xml.etree.ElementTree as Et
-        # [x] TODO write docstring
-        # [v] TODO add assertion
-        # [v] TODO getting classes list.
-        # [v] TODO search annotation label
-        # [v] TODO check working well
 
-        # result sorted ordered by alphabet
         assert(len(annotation_paths) != 0)
 
         classes = list()
@@ -70,25 +69,80 @@ class VocDetection(data.Dataset):
                 classes.append(cls) if cls not in classes else None
                 classes = list(filter(None, classes))
 
-        classes.sort()
-        return classes
+        classes_ordered_by_alphabet = sorted(classes)
+
+        return classes_ordered_by_alphabet
 
     def _get_label(self):
-        # TODO write docstring
         # TODO getting detection label
         pass
 
-    def __convert_to_yolo_label(self):
-        # TODO write docstring
-        # TODO convert to yolo label
-        pass
+    def __convert_box_label_to_yolo_label(self, label, classes):
+
+        root_keys = label.keys()
+        size_keys = label["size"].keys()
+        number_of_objects = len(label["object"])
+
+        assert ("size" in root_keys)
+        assert ("object" in root_keys)
+        assert ("width" in size_keys)
+        assert ("height" in size_keys)
+        assert (number_of_objects != 0)
+
+        yolo_label = list()
+
+        image_size = {
+            "width": float(label["size"]["width"]),
+            "height": float(label["size"]["height"]),
+        }
+
+        for _object in label["object"]:
+            _object_keys = _object.keys()
+            assert ("name" in _object_keys)
+            assert ("xmin" in _object_keys)
+            assert ("ymin" in _object_keys)
+            assert ("xmax" in _object_keys)
+            assert ("ymax" in _object_keys)
+
+            name = _object["name"]
+            cls = classes.index(name)
+            box_coordinate = {
+                "xmin": float(_object["xmin"]),
+                "ymin": float(_object["ymin"]),
+                "xmax": float(_object["xmax"]),
+                "ymax": float(_object["ymax"]),
+            }
+
+            yolo_coordinate = self.__convert_coordinate(image_size, box_coordinate)
+            yolo_coordinate.insert(0, cls)
+            yolo_label.append(yolo_coordinate)
+
+        return yolo_label
+
+    def __convert_coordinate(self, image_size, box_coordinate):
+        dw = 1. / image_size["width"]
+        dh = 1. / image_size["height"]
+
+        x_of_box = (box_coordinate["xmin"] + box_coordinate["xmax"]) / 2.0
+        y_of_box = (box_coordinate["ymin"] + box_coordinate["ymax"]) / 2.0
+        width_of_box = box_coordinate["xmax"] - box_coordinate["xmin"]
+        height_of_box = box_coordinate["ymax"] - box_coordinate["ymin"]
+
+        relative_x_of_center = x_of_box * dw
+        relative_y_of_center = y_of_box * dh
+        relative_box_width = width_of_box * dw
+        relative_box_height = height_of_box * dh
+
+        yolo_coordinate = [relative_x_of_center,
+                           relative_y_of_center,
+                           relative_box_width,
+                           relative_box_height]
+
+        return yolo_coordinate
 
     def __parse_xml_of_voc(self, annotation_path):
         import xml.etree.ElementTree as Et
-        # [x] TODO write docstring
         # [x] TODO it should check about satisfied it have all element for detection
-        # [v] TODO getting voc annotation
-        # [v] TODO check working well
 
         result = dict()
 
@@ -201,5 +255,3 @@ class VocDetection(data.Dataset):
 
 root = "/home/martin/Documents/dev/Deepbaksu_vision/_Datasets/VOC2012/"
 voc = VocDetection(root=root)
-print(voc.annotation_paths[0])
-print(voc._parse_xml_of_voc(voc.annotation_paths[0]))
