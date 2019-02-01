@@ -1,6 +1,5 @@
 import os
 from PIL import Image
-
 from torch.utils import data
 
 class VocDetection(data.Dataset):
@@ -143,7 +142,7 @@ class VocDetection(data.Dataset):
             assert "ymax" in _object_keys
 
             name = _object["name"]
-            cls = classes_list.index(name)
+            cls = float(classes_list.index(name))
             box_coordinate = {
                 "xmin": float(_object["xmin"]),
                 "ymin": float(_object["ymin"]),
