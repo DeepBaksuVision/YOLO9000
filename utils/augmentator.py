@@ -1,90 +1,109 @@
-
 import numpy as np
 import imgaug as ia
 from PIL import Image
 from mpl_toolkits.axes_grid1 import ImageGrid
-
-
-def GetYoloStyleBBoxes(normed_lxywhs, bbs_aug, image_width, image_height):
-    normed_bbs_aug = []
-
-    for i in range(len(bbs_aug.bounding_boxes)):
-        after = bbs_aug.bounding_boxes[i]
-        coord = CvtCoordsXXYY2XYWH(image_width, image_height, xmin=after.x1, xmax=after.x2, ymin=after.y1, ymax=after.y2)
-        normed_bbs_aug.append([normed_lxywhs[i][0], coord[0], coord[1], coord[2], coord[3]])
-
-    return normed_bbs_aug
-
-def GetImgaugStyleBBoxes(normed_lxywhs, image_width, image_height):
-    bbs = ia.BoundingBoxesOnImage([], shape=(image_width, image_height))
-
-    for normed_lxywh in normed_lxywhs:
-        xxyy = CvtCoordsXYWH2XXYY(normed_lxywh, image_width, image_height)
-        bbs.bounding_boxes.append(ia.BoundingBox(x1=xxyy[0], x2=xxyy[1], y1=xxyy[2], y2=xxyy[3], label='None'))
-
-    return bbs
-
-def CvtCoordsXXYY2XYWH(image_width, image_height, xmin, xmax, ymin, ymax):
-    # calculate bbox_center
-    bbox_center_x = (xmin + xmax) / 2
-    bbox_center_y = (ymin + ymax) / 2
-
-    # calculate bbox_size
-    bbox_width = xmax - xmin
-    bbox_height = ymax - ymin
-
-    # normalize
-    normalized_x = bbox_center_x / image_width
-    normalized_y = bbox_center_y / image_height
-    normalized_w = bbox_width / image_width
-    normalized_h = bbox_height / image_height
-
-    return normalized_x, normalized_y, normalized_w, normalized_h
-
-def CvtCoordsXYWH2XXYY(normed_lxywh, image_width, image_height):
-    centered_x = normed_lxywh[1] * image_width
-    centered_y = normed_lxywh[2] * image_height
-    object_width = normed_lxywh[3] * image_width
-    object_height = normed_lxywh[4] * image_height
-
-    xmin = centered_x - object_width / 2
-    xmax = centered_x + object_width / 2
-    ymin = centered_y - object_height / 2
-    ymax = centered_y + object_height / 2
-
-    return xmin, xmax, ymin, ymax
-
 
 class Augmenter(object):
 
     def __init__(self, seq):
         self.seq = seq
 
-    def __call__(self, pil_image, box_annotation_dict):
+    def __call__(self, img_and_annotation):
 
-        #[3.0, 0.498, 0.508, 0.328, 0.661]
-        #(149.63199999999998, 296.576, 79.51999999999998, 375.648)
+        image = img_and_annotation[0]
+        box_annotation_dict = img_and_annotation[1]
 
-        image = np.array(pil_image)
+        image = np.array(image)
+        image_aug, bbs_aug = self.augment_image(image, box_annotation_dict, self.seq)
+        image_aug = Image.fromarray(image_aug)
 
-        image_aug, normed_bbs_aug = self.augmentImage(image, box_annotation_dict, self.seq)
+        return image_aug, bbs_aug
 
-        image_aug = Image.fromarray(image_aug)  # numpy array to PIL image Again!
-        return image_aug, normed_bbs_aug
+    def augment_image(self, image, box_annotation_dict, seq):
 
-    @staticmethod
-    def augmentImage(image, box_annotation_dict, seq):
-
-        bbs = GetImgaugStyleBBoxes(normed_lxywhs, image_width, image_height)
-
+        bbs = self.transform_imgaug_style_boxes(box_annotation_dict)
         seq_det = seq.to_deterministic()
 
         image_aug = seq_det.augment_images([image])[0]
-
         bbs_aug = seq_det.augment_bounding_boxes([bbs])[0]
-
         bbs_aug = bbs_aug.remove_out_of_image().cut_out_of_image()
 
-        normed_bbs_aug = GetYoloStyleBBoxes(normed_lxywhs, bbs_aug, image_width, image_height)
+        bbs_aug = self.transofrm_annotation_information_style(box_annotation_dict, bbs_aug)
 
-        return image_aug, normed_bbs_aug
+        return image_aug, bbs_aug
+
+    def transofrm_annotation_information_style(self, box_annotation_dict, bbs_aug):
+        assert isinstance(box_annotation_dict, dict)
+
+        box_annotation_keys = box_annotation_dict.keys()
+        assert "size" in box_annotation_keys
+        assert "object" in box_annotation_keys
+
+        size_tag_keys = box_annotation_dict["size"].keys()
+        assert "width" in size_tag_keys
+        assert "height" in size_tag_keys
+        assert "depth" in size_tag_keys
+
+        assert isinstance(box_annotation_dict["object"], list)
+        for _object in box_annotation_dict["object"]:
+            _object_keys = _object.keys()
+            assert "name" in _object_keys
+            assert "xmin" in _object_keys
+            assert "ymin" in _object_keys
+            assert "xmax" in _object_keys
+            assert "ymax" in _object_keys
+
+        assert isinstance(bbs_aug, ia.BoundingBoxesOnImage)
+
+        objects = box_annotation_dict["object"]
+        objects.clear()
+
+        for i in range(len(bbs_aug.bounding_boxes)):
+            augmented_box = bbs_aug.bounding_boxes[i]
+            objects.append(
+                {
+                    "name": augmented_box.label,
+                    "xmin": augmented_box.x1,
+                    "ymin": augmented_box.y1,
+                    "xmax": augmented_box.x2,
+                    "ymax": augmented_box.y2
+                }
+            )
+
+        return box_annotation_dict
+
+    def transform_imgaug_style_boxes(self, box_annotation_dict):
+        assert isinstance(box_annotation_dict, dict)
+
+        box_annotation_keys = box_annotation_dict.keys()
+        assert "size" in box_annotation_keys
+        assert "object" in box_annotation_keys
+
+        size_tag_keys = box_annotation_dict["size"].keys()
+        assert "width" in size_tag_keys
+        assert "height" in size_tag_keys
+        assert "depth" in size_tag_keys
+
+        assert isinstance(box_annotation_dict["object"], list)
+        for _object in box_annotation_dict["object"]:
+            _object_keys = _object.keys()
+            assert "name" in _object_keys
+            assert "xmin" in _object_keys
+            assert "ymin" in _object_keys
+            assert "xmax" in _object_keys
+            assert "ymax" in _object_keys
+
+        image_width = int(box_annotation_dict["size"]["width"])
+        image_height = int(box_annotation_dict["size"]["height"])
+
+        bbs = ia.BoundingBoxesOnImage([], shape=(image_width, image_height))
+
+        for _object in box_annotation_dict["object"]:
+            name = _object["name"]
+            xmin = float(_object["xmin"])
+            ymin = float(_object["ymin"])
+            xmax = float(_object["xmax"])
+            ymax = float(_object["ymax"])
+            bbs.bounding_boxes.append(ia.BoundingBox(x1=xmin, x2=xmax, y1=ymin, y2=ymax, label=name))
+
+        return bbs
