@@ -20,29 +20,35 @@ class VocDetection(data.Dataset):
                  root,
                  image_folder="JPEGImages",
                  annotation_folder="Annotations",
-                 resize_size=(416, 416)):
+                 resize_size=(416, 416),
+                 transform=None):
 
         self.resize_size = resize_size
 
         image_path_list = self._get_list_of_filepath(root, image_folder)
-        image_path_list_orderd_by_filename = \
-            sorted(image_path_list,
-                   key=lambda filepath: int(filepath.split("/")[-1].split(".")[0]))
-        self.image_path_list = image_path_list_orderd_by_filename
+        self.image_path_list = self.sort_ordered_by_filename(image_path_list)
 
         annotation_path_list = self._get_list_of_filepath(root, annotation_folder)
-        annotation_path_list_ordered_by_filename = \
-            sorted(annotation_path_list,
-                   key=lambda filepath: int(filepath.split("/")[-1].split(".")[0]))
-        self.annotation_path_list = annotation_path_list_ordered_by_filename
+        self.annotation_path_list = self.sort_ordered_by_filename(annotation_path_list)
 
         classes_list = self._get_classes_list_from_dataset(self.annotation_path_list)
         classes_list_ordered_by_alphabet = sorted(classes_list)
         self.classes_list = classes_list_ordered_by_alphabet
 
+        self.transform = transform
+
         assert self._is_validated_image_Extension(self.image_path_list)
         assert self._is_validated_annotation_Extension(self.annotation_path_list)
         assert len(self.image_path_list) == len(self.annotation_path_list)
+
+    @staticmethod
+    def sort_ordered_by_filename(path_list):
+        assert isinstance(path_list, list)
+        for path in path_list:
+            assert isinstance(path, str)
+
+        return sorted(path_list,
+                   key=lambda filepath: int(filepath.split("/")[-1].split(".")[0]))
 
     def __getitem__(self, index):
         """
@@ -56,7 +62,13 @@ class VocDetection(data.Dataset):
 
         image = Image.open(self.image_path_list[index]).convert('RGB')
         image = image.resize(self.resize_size)
-        target = self._get_yolo_label(self.annotation_path_list[index], self.classes_list)
+
+        box_annotation_dict = self.__parse_voc(self.annotation_path_list[index])
+
+        if self.transform:
+            image, voc_box_information_dict = self.transform(image, box_annotation_dict)
+
+        target = self.__convert_box_label_to_yolo_label(box_annotation_dict, self.classes_list)
 
         return image, target
 
@@ -98,17 +110,6 @@ class VocDetection(data.Dataset):
                 classes_list = list(filter(None, classes_list))
 
         return classes_list
-
-    def _get_yolo_label(self, annotation_path, classes_list):
-        assert isinstance(annotation_path, str)
-        assert isinstance(classes_list, list)
-        for cls in classes_list:
-            assert isinstance(cls, str)
-
-        box_label = self.__parse_xml_of_voc(annotation_path)
-        yolo_label = self.__convert_box_label_to_yolo_label(box_label, classes_list)
-
-        return yolo_label
 
     def __convert_box_label_to_yolo_label(self, label, classes_list):
         assert isinstance(label, dict)
@@ -189,7 +190,7 @@ class VocDetection(data.Dataset):
                 relative_box_width, relative_box_height]
 
     @staticmethod
-    def __parse_xml_of_voc(annotation_path):
+    def __parse_voc(annotation_path):
         import xml.etree.ElementTree as Et
         assert isinstance(annotation_path, str)
 
