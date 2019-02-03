@@ -2,7 +2,7 @@ import numpy as np
 import imgaug as ia
 from PIL import Image
 
-class Augmenter(object):
+class Augmenter():
 
     def __init__(self, seq):
         self.seq = seq
@@ -29,7 +29,8 @@ class Augmenter(object):
 
         return image_aug, augmented_box
 
-    def transofrm_annotation_information_style(self, box_annotation_dict, bbs_aug):
+    @staticmethod
+    def transofrm_annotation_information_style(box_annotation_dict, bbs_aug):
         assert isinstance(box_annotation_dict, dict)
 
         box_annotation_keys = box_annotation_dict.keys()
@@ -69,7 +70,8 @@ class Augmenter(object):
 
         return box_annotation_dict
 
-    def transform_imgaug_style_boxes(self, box_annotation_dict):
+    @staticmethod
+    def transform_imgaug_style_boxes(box_annotation_dict):
         assert isinstance(box_annotation_dict, dict)
 
         box_annotation_keys = box_annotation_dict.keys()
@@ -101,6 +103,10 @@ class Augmenter(object):
             ymin = int(_object["ymin"])
             xmax = int(_object["xmax"])
             ymax = int(_object["ymax"])
-            bbs.bounding_boxes.append(ia.BoundingBox(x1=xmin, x2=xmax, y1=ymin, y2=ymax, label=name))
+            bbs.bounding_boxes.append(ia.BoundingBox(x1=xmin,
+                                                     x2=xmax,
+                                                     y1=ymin,
+                                                     y2=ymax,
+                                                     label=name))
 
         return bbs
