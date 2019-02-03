@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 
-def visualize_detection_label(image, coordinates, classes_list, grid_size):
+def visualize_detection_label(image, coordinates, classes_list, grid_size, mode="yolo"):
     assert image
     assert coordinates
     assert classes_list
@@ -9,17 +9,22 @@ def visualize_detection_label(image, coordinates, classes_list, grid_size):
     assert isinstance(grid_size, tuple)
     assert len(grid_size) == 2
     assert isinstance(image, Image.Image)
-    assert isinstance(coordinates, list)
-    for coordinate in coordinates:
-        assert len(coordinate) == 5
-        for element in coordinate:
-            assert isinstance(element, float)
 
     draw = ImageDraw.Draw(image)
     draw_grid(draw, image.size, grid_size)
 
-    for coordinate in coordinates:
-        draw_box_information(draw, coordinate, image.size, classes_list)
+    if mode == "yolo":
+        assert isinstance(coordinates, list)
+        for coordinate in coordinates:
+            assert len(coordinate) == 5
+            for element in coordinate:
+                assert isinstance(element, float)
+
+        for coordinate in coordinates:
+            draw_yolo_information(draw, coordinate, image.size, classes_list)
+    elif mode == "box":
+        draw_box_information(draw, coordinates)
+
 
     plt.figure()
     plt.imshow(image)
@@ -72,7 +77,18 @@ def convert_yolo_label_to_box_label(coordinate, image_size, classes_list):
 
     return [cls, xmin, ymin, xmax, ymax]
 
-def draw_box_information(draw_image_obj, coordinate, image_size, classes_list):
+def draw_box_information(draw_image_obj, coordinates):
+
+    for _object in coordinates["object"]:
+        cls = _object["name"]
+        xmin = int(_object["xmin"])
+        ymin = int(_object["ymin"])
+        xmax = int(_object["xmax"])
+        ymax = int(_object["ymax"])
+        draw_image_obj.rectangle(((xmin, ymin), (xmax, ymax)), outline="blue")
+        draw_image_obj.text((xmin, ymin), cls)
+
+def draw_yolo_information(draw_image_obj, coordinate, image_size, classes_list):
     assert isinstance(draw_image_obj, ImageDraw.ImageDraw)
     assert isinstance(image_size, tuple)
     assert isinstance(coordinate, list)

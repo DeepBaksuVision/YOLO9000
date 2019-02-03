@@ -61,14 +61,13 @@ class VocDetection(data.Dataset):
         assert isinstance(index, int)
 
         image = Image.open(self.image_path_list[index]).convert('RGB')
-        image = image.resize(self.resize_size)
-
         box_annotation_dict = self.__parse_voc(self.annotation_path_list[index])
 
         if self.transform:
-            image, voc_box_information_dict = self.transform([image, box_annotation_dict])
+            image, box_annotation_dict = self.transform([image, box_annotation_dict])
 
         target = self.__convert_box_label_to_yolo_label(box_annotation_dict, self.classes_list)
+        image = image.resize(self.resize_size)
 
         return image, target
 

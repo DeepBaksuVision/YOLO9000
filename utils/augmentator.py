@@ -1,7 +1,6 @@
 import numpy as np
 import imgaug as ia
 from PIL import Image
-from mpl_toolkits.axes_grid1 import ImageGrid
 
 class Augmenter(object):
 
@@ -20,17 +19,15 @@ class Augmenter(object):
         return image_aug, bbs_aug
 
     def augment_image(self, image, box_annotation_dict, seq):
-
         bbs = self.transform_imgaug_style_boxes(box_annotation_dict)
         seq_det = seq.to_deterministic()
 
         image_aug = seq_det.augment_images([image])[0]
         bbs_aug = seq_det.augment_bounding_boxes([bbs])[0]
         bbs_aug = bbs_aug.remove_out_of_image().cut_out_of_image()
+        augmented_box = self.transofrm_annotation_information_style(box_annotation_dict, bbs_aug)
 
-        bbs_aug = self.transofrm_annotation_information_style(box_annotation_dict, bbs_aug)
-
-        return image_aug, bbs_aug
+        return image_aug, augmented_box
 
     def transofrm_annotation_information_style(self, box_annotation_dict, bbs_aug):
         assert isinstance(box_annotation_dict, dict)
@@ -96,14 +93,14 @@ class Augmenter(object):
         image_width = int(box_annotation_dict["size"]["width"])
         image_height = int(box_annotation_dict["size"]["height"])
 
-        bbs = ia.BoundingBoxesOnImage([], shape=(image_width, image_height))
+        bbs = ia.BoundingBoxesOnImage([], shape=(image_height, image_width))
 
         for _object in box_annotation_dict["object"]:
             name = _object["name"]
-            xmin = float(_object["xmin"])
-            ymin = float(_object["ymin"])
-            xmax = float(_object["xmax"])
-            ymax = float(_object["ymax"])
+            xmin = int(_object["xmin"])
+            ymin = int(_object["ymin"])
+            xmax = int(_object["xmax"])
+            ymax = int(_object["ymax"])
             bbs.bounding_boxes.append(ia.BoundingBox(x1=xmin, x2=xmax, y1=ymin, y2=ymax, label=name))
 
         return bbs
