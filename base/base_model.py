@@ -23,6 +23,7 @@ class BaseModel(nn.Module):
         """
         Model summary
         """
+
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
         self.logger.info('Trainable parameters: {}'.format(params))
@@ -35,4 +36,3 @@ class BaseModel(nn.Module):
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
         return super(BaseModel, self).__str__() + '\nTrainable parameters: {}'.format(params)
-        # print(super(BaseModel, self))
