@@ -23,17 +23,18 @@ def main(config, resume):
     # build model architecture
     model = get_instance(module_arch, 'arch', config)
     print(model)
-    
+
     # get function handles of loss and metrics
     loss = getattr(module_loss, config['loss'])
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
-    # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
+    # build optimizer, learning rate scheduler.
+    # delete every lines containing lr_scheduler for disabling scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = get_instance(torch.optim, 'optimizer', config, trainable_params)
     lr_scheduler = get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
 
-    trainer = Trainer(model, loss, metrics, optimizer, 
+    trainer = Trainer(model, loss, metrics, optimizer,
                       resume=resume,
                       config=config,
                       data_loader=data_loader,
@@ -53,17 +54,21 @@ if __name__ == '__main__':
                            help='indices of GPUs to enable (default: all)')
     args = parser.parse_args()
 
+    config = None
     if args.config:
         # load config file
         config = json.load(open(args.config))
         path = os.path.join(config['trainer']['save_dir'], config['name'])
     elif args.resume:
-        # load config file from checkpoint, in case new config file is not given.
-        # Use '--config' and '--resume' arguments together to load trained model and train more with changed config.
+        # load config file from checkpoint,
+        # in case new config file is not given.
+        # Use '--config' and '--resume' arguments together
+        # to load trained model and train more with changed config.
         config = torch.load(args.resume)['config']
     else:
-        raise AssertionError("Configuration file need to be specified. Add '-c config.json', for example.")
-    
+        raise AssertionError("Configuration file need to be specified. \
+         Add '-c config.json', for example.")
+
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
 
