@@ -6,3 +6,4 @@ mypy
 pylint
 isort
 black
+pipreqs

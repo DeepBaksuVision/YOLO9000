@@ -5,3 +5,4 @@ torch==1.0.0
 matplotlib==3.0.2
 numpy==1.16.0
 Pillow==5.4.1
+torchsummary==1.5.1

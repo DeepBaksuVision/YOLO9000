@@ -8,3 +8,5 @@ python:
 script:
     - make test
 
+notifications:
+  slack: deepbaksuvision:hMb1AfIwg9B0oEiyYPtSohIT
