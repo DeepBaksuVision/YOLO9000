@@ -1,0 +1,157 @@
+{
+    "name": "darknet19",
+    "0": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":32, 
+         "bn":32, 
+         "leaky":0.1}
+    },
+    "1": {
+        "type": "maxpool"
+    },
+    "2": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":64, 
+         "bn":64, 
+         "leaky":0.1}
+    },
+    "3": {
+        "type": "maxpool"
+    },
+    "4": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":128, 
+         "bn":128, 
+         "leaky":0.1}
+    },
+    "5": {
+        "type": "convolutional_1x1",
+        "layers": 
+        {"conv":64, 
+         "bn":64, 
+         "leaky":0.1}
+    },
+    "6": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":128, 
+         "bn":128, 
+         "leaky":0.1}
+    },
+    "7": {
+        "type": "maxpool"
+    },
+    "8": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":256, 
+         "bn":256, 
+         "leaky":0.1}
+    },
+    "9": {
+        "type": "convolutional_1x1",
+        "layers": 
+        {"conv":128, 
+         "bn":128, 
+         "leaky":0.1}
+    },
+    "10": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":256, 
+         "bn":256, 
+         "leaky":0.1}
+    },
+    "11": {
+        "type": "maxpool"
+    },
+    "12": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":512, 
+         "bn":512, 
+         "leaky":0.1}
+    },
+    "13": {
+        "type": "convolutional_1x1",
+        "layers": 
+        {"conv":256, 
+         "bn":256, 
+         "leaky":0.1}
+    },
+    "14": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":512, 
+         "bn":512, 
+         "leaky":0.1}
+    },
+    "15": {
+        "type": "convolutional_1x1",
+        "layers": 
+        {"conv":256, 
+         "bn":256, 
+         "leaky":0.1}
+    },
+    "16": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":512, 
+         "bn":512, 
+         "leaky":0.1}
+    },
+    "17": {
+        "type": "maxpool"
+    },
+    "18": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":1024, 
+         "bn":1024, 
+         "leaky":0.1}
+    },
+    "19": {
+        "type": "convolutional_1x1",
+        "layers": 
+        {"conv":512, 
+         "bn":512, 
+         "leaky":0.1}
+    },
+    "20": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":1024, 
+         "bn":1024, 
+         "leaky":0.1}
+    },
+    "21": {
+        "type": "convolutional_1x1",
+        "layers": 
+        {"conv":512, 
+         "bn":512, 
+         "leaky":0.1}
+    },
+    "22": {
+        "type": "convolutional_3x3",
+        "layers": 
+        {"conv":1024, 
+         "bn":1024, 
+         "leaky":0.1}
+    },
+    "23": {
+        "type": "last_convolutional",
+        "layers": 
+        {"conv":1000}
+    },
+    "24": {
+        "type": "avgpool"
+    },
+    "25": {
+        "type": "softmax"
+    }
+}
+    
+
